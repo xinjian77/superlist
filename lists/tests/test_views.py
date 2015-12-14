@@ -3,23 +3,13 @@ from django.http import HttpRequest
 from django.template.loader import render_to_string
 from django.test import TestCase
 from django.utils.html import escape
+from unittest import  skip
 
 from lists.models import Item, List
 from lists.views import home_page
 from lists.forms import ItemForm, EMPTY_LIST_ERROR
 
 class HomePageTest(TestCase):
-
-#     def test_root_url_resolves_to_home_page_view(self):
-#         found = resolve('/')
-#         self.assertEqual(found.func, home_page)
-# 
-# 
-#     def test_home_page_returns_correct_html(self):
-#         request = HttpRequest()
-#         response = home_page(request)
-#         expected_html = render_to_string('home.html')
-#         self.assertEqual(response.content.decode(), expected_html)
 
     def test_home_page_renders_home_template(self):
         response = self.client.get('/')
@@ -81,17 +71,6 @@ class ListViewTest(TestCase):
         )
         
         self.assertRedirects(response, '/lists/%d/' % (correct_list.id,))
-      
-#     def test_validation_errors_end_up_on_list_page(self):
-#         list_ = List.objects.create()
-#         response = self.client.post(
-#             '/lists/%d/' % (list_.id,),
-#             data = {'text': ''}
-#         )
-#         self.assertEqual(response.status_code, 200)
-#         self.assertTemplateUsed(response, 'list.html')
-#         expected_error = escape("You can't have an empty list item")
-#         self.assertContains(response, expected_error)
        
     def post_invalid_input(self):
         list_ = List.objects.create()
@@ -116,6 +95,20 @@ class ListViewTest(TestCase):
     def test_for_invalid_input_shows_error_on_page(self):
         response = self.post_invalid_input()
         self.assertContains(response, escape(EMPTY_LIST_ERROR))
+        
+    @skip
+    def test_duplicate_item_validation_errors_end_up_on_lists_page(self):
+        list1 = List.objects.create()
+        item1 = Item.objects.create(list=list1, text='textey')
+        response = self.client.post(
+                '/lists/%d/' % (list1.id,),
+                data={'text': 'texty'}
+        )
+        
+        expected_error = escape("You've already got this is your list")
+        self.assertContains(response, expected_error)
+        self.assertTemplateUsed(response, 'list.html')
+        self.assertEqual(Item.objects.all().count(), 1)
        
     def test_displays_item_form(self):
         list_ = List.objects.create()
